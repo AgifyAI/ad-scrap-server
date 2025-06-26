@@ -9,7 +9,6 @@ import { userRouter } from '@/api/user/userRouter';
 import errorHandler from '@/common/middleware/errorHandler';
 import rateLimiter from '@/common/middleware/rateLimiter';
 import requestLogger from '@/common/middleware/requestLogger';
-import { env } from '@/common/utils/envConfig';
 import { scrapAdsRouter } from './api/scrap/scrapAdRouter';
 
 const logger = pino({ name: 'server start' });
@@ -21,7 +20,7 @@ app.set('trust proxy', true);
 // Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
+app.use(cors({ origin: 'http://localhost:*', credentials: true }));
 app.use(helmet());
 app.use(rateLimiter);
 

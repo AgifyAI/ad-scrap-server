@@ -10,8 +10,6 @@ const envSchema = z.object({
 
   PORT: z.coerce.number().int().positive().default(8080),
 
-  CORS_ORIGIN: z.string().url().default('http://localhost:8080'),
-
   COMMON_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().default(1000),
 
   COMMON_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(1000),
