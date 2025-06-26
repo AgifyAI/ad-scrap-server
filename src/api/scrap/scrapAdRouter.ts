@@ -7,6 +7,7 @@ import { SimpleScraper } from '@/common/utils/scrapper';
 import { ServiceResponse } from '@/common/models/serviceResponse';
 import { StatusCodes } from 'http-status-codes';
 import { Page } from 'puppeteer';
+import { tokenAuth } from '@/common/middleware/tokenAuth';
 
 export const scrapAdsRegistry = new OpenAPIRegistry();
 export const scrapAdsRouter: Router = express.Router();
@@ -19,7 +20,7 @@ scrapAdsRegistry.registerPath({
 });
 
 async function myScrapingLogic(page: Page): Promise<any> {
-  const MAX_ITERATIONS = 2;
+  const MAX_ITERATIONS = 10;
 
   console.log('🔍 Starting scraping logic...');
 
@@ -58,38 +59,38 @@ async function myScrapingLogic(page: Page): Promise<any> {
 
   let previousHeight = 0;
   let scrollAttempts = 0;
-  const MAX_SCROLL_ATTEMPTS = 20;
+  const MAX_SCROLL_ATTEMPTS = 40;
 
   console.log('Starting scroll to load more ads...');
 
-  //   while (scrollAttempts < MAX_SCROLL_ATTEMPTS) {
-  //     try {
-  //       await scrollPageToBottom();
+  while (scrollAttempts < MAX_SCROLL_ATTEMPTS) {
+    try {
+      await scrollPageToBottom();
 
-  //       if (page.isClosed()) {
-  //         throw new Error('Page was closed after scroll');
-  //       }
+      if (page.isClosed()) {
+        throw new Error('Page was closed after scroll');
+      }
 
-  //       const newHeight = await page.evaluate(() => {
-  //         const bodyHeight = document.body?.scrollHeight || 0;
-  //         const htmlHeight = document.documentElement?.scrollHeight || 0;
-  //         return Math.max(bodyHeight, htmlHeight);
-  //       });
+      const newHeight = await page.evaluate(() => {
+        const bodyHeight = document.body?.scrollHeight || 0;
+        const htmlHeight = document.documentElement?.scrollHeight || 0;
+        return Math.max(bodyHeight, htmlHeight);
+      });
 
-  //       console.log(`Scroll ${scrollAttempts + 1}: Height ${previousHeight} -> ${newHeight}`);
+      console.log(`Scroll ${scrollAttempts + 1}: Height ${previousHeight} -> ${newHeight}`);
 
-  //       if (newHeight === previousHeight) {
-  //         console.log('No new content loaded, stopping scroll');
-  //         break;
-  //       }
+      if (newHeight === previousHeight) {
+        console.log('No new content loaded, stopping scroll');
+        break;
+      }
 
-  //       previousHeight = newHeight;
-  //       scrollAttempts++;
-  //     } catch (error) {
-  //       console.error(`Scroll attempt ${scrollAttempts + 1} failed:`, error.message);
-  //       break;
-  //     }
-  //   }
+      previousHeight = newHeight;
+      scrollAttempts++;
+    } catch (error: any) {
+      console.error(`Scroll attempt ${scrollAttempts + 1} failed:`, error.message);
+      break;
+    }
+  }
 
   console.log(`Completed scrolling after ${scrollAttempts} attempts`);
 
@@ -162,7 +163,7 @@ async function myScrapingLogic(page: Page): Promise<any> {
       }
 
       // Wait longer and ensure page is completely stable
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // More robust page stability check
       const isPageStable = await page.evaluate(() => {
@@ -250,8 +251,8 @@ async function myScrapingLogic(page: Page): Promise<any> {
         continue;
       }
 
-      console.log(`Waiting 5 seconds for modal to load...`);
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      console.log(`Waiting 2 seconds for modal to load...`);
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       console.log(`Looking for European Union transparency link...`);
       let extractedData = null;
@@ -295,12 +296,12 @@ async function myScrapingLogic(page: Page): Promise<any> {
       //     const hasAdBuyerText = Array.from(allDescendantDivs).some(
       //       (div) =>
       //         div.textContent &&
-      //         (div.textContent.trim() === 'About the advertiser' || div.textContent.trim() === 'À propos de l’annonceur')
+      //         (div.textContent.trim() === 'About the advertiser' || div.textContent.trim() === 'À propos de l'annonceur')
       //     );
 
       //     const selfHasText =
       //       linkDiv.textContent &&
-      //       (linkDiv.textContent.includes('About the advertiser') || linkDiv.textContent.includes('À propos de l’annonceur'));
+      //       (linkDiv.textContent.includes('About the advertiser') || linkDiv.textContent.includes('À propos de l'annonceur'));
 
       //     if (hasAdBuyerText || selfHasText) {
       //       adBuyerLink = linkDiv;
@@ -320,8 +321,8 @@ async function myScrapingLogic(page: Page): Promise<any> {
       // console.log(`Ad buyer result:`, adBuyerResult);
 
       if (transparencyResult.found) {
-        console.log(`European Union transparency link clicked, waiting 3 second...`);
-        await new Promise((resolve) => setTimeout(resolve, 3000));
+        console.log(`European Union transparency link clicked, waiting 2 second...`);
+        await new Promise((resolve) => setTimeout(resolve, 2000));
         // Add page stability check
         console.log(`Waiting 3 seconds for page to stabilize...`);
         await page.waitForFunction(
@@ -455,8 +456,8 @@ async function myScrapingLogic(page: Page): Promise<any> {
         return { found: false };
       });
 
-      console.log(`Waiting 3 seconds for page to stabilize...`);
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      console.log(`Waiting 1 seconds for page to stabilize...`);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Add page stability check
       await page.waitForFunction(
@@ -512,7 +513,7 @@ async function myScrapingLogic(page: Page): Promise<any> {
   };
 }
 
-scrapAdsRouter.get('/', async (_req: Request, res: Response) => {
+scrapAdsRouter.get('/', tokenAuth, async (_req: Request, res: Response) => {
   const scraper = new SimpleScraper({
     headless: true,
     timeout: 30000,
@@ -535,12 +536,7 @@ scrapAdsRouter.get('/', async (_req: Request, res: Response) => {
     console.log('📊 Test Results:');
     console.log(JSON.stringify(result, null, 2));
     await scraper.close();
-    const response = ServiceResponse.success('success', {
-      message: 'success',
-      data: {
-        message: 'success',
-      },
-    });
+    const response = ServiceResponse.success('success', result);
     res.status(response.statusCode).send(response);
   } catch (error: any) {
     await scraper.close();

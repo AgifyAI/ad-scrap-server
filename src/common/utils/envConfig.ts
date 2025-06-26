@@ -13,6 +13,8 @@ const envSchema = z.object({
   COMMON_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().default(1000),
 
   COMMON_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(1000),
+
+  SCRAP_API_TOKEN: z.string().min(1).default('your-secret-token-here'),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
