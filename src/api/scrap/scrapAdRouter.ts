@@ -20,7 +20,7 @@ scrapAdsRegistry.registerPath({
 });
 
 async function myScrapingLogic(page: Page): Promise<any> {
-  const MAX_ITERATIONS = 2;
+  const MAX_ITERATIONS = 10;
 
   console.log('🔍 Starting scraping logic...');
 
@@ -534,7 +534,7 @@ scrapAdsRouter.get('/', tokenAuth, async (req: Request, res: Response) => {
       return;
     }
     await scraper.page.goto(
-      `https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=FR&is_targeted_country=false&media_type=all&search_type=page&view_all_page_id=${page_id}`,
+      `https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=FR&is_targeted_country=false&media_type=all&search_type=page&view_all_page_id=${page_id}`, // 1605416949758617
       { waitUntil: 'networkidle2' }
     );
 
