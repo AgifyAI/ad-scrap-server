@@ -17,6 +17,7 @@ export class SimpleScraper {
     console.log('🚀 Launching browser...');
     this.browser = await puppeteer.launch({
       headless: this.headless,
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',

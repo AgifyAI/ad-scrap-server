@@ -11,7 +11,7 @@ import rateLimiter from '@/common/middleware/rateLimiter';
 import requestLogger from '@/common/middleware/requestLogger';
 import { env } from '@/common/utils/envConfig';
 import { scrapAdsRouter } from './api/scrap/scrapAdRouter';
-console.log('env.isProduction : ', env.isProduction);
+
 const logger = pino({
   name: 'server start',
   level: env.isProduction ? 'info' : 'debug',
