@@ -20,7 +20,7 @@ scrapAdsRegistry.registerPath({
 });
 
 async function myScrapingLogic(page: Page): Promise<any> {
-  const MAX_ITERATIONS = 10;
+  const MAX_ITERATIONS = 2;
 
   console.log('🔍 Starting scraping logic...');
 
@@ -324,7 +324,7 @@ async function myScrapingLogic(page: Page): Promise<any> {
         console.log(`European Union transparency link clicked, waiting 2 second...`);
         await new Promise((resolve) => setTimeout(resolve, 2000));
         // Add page stability check
-        console.log(`Waiting 3 seconds for page to stabilize...`);
+        console.log(`Waiting page to stabilize...`);
         await page.waitForFunction(
           () => {
             return document.readyState === 'complete' && document.body !== null && document.body.children.length > 0;
@@ -477,7 +477,6 @@ async function myScrapingLogic(page: Page): Promise<any> {
       });
 
       console.log(`✅ Iteration ${i + 1} completed successfully`);
-      await new Promise((resolve) => setTimeout(resolve, 2000));
     } catch (error: any) {
       console.error(`Error in iteration ${i + 1}:`, error.message);
       clickResults.push({
@@ -513,7 +512,15 @@ async function myScrapingLogic(page: Page): Promise<any> {
   };
 }
 
-scrapAdsRouter.get('/', tokenAuth, async (_req: Request, res: Response) => {
+scrapAdsRouter.get('/', tokenAuth, async (req: Request, res: Response) => {
+  const page_id = req.query.page_id as string;
+
+  if (!page_id) {
+    const response = ServiceResponse.failure('Page ID is required', null, StatusCodes.BAD_REQUEST);
+    res.status(response.statusCode).send(response);
+    return;
+  }
+
   const scraper = new SimpleScraper({
     headless: true,
     timeout: 30000,
@@ -527,7 +534,7 @@ scrapAdsRouter.get('/', tokenAuth, async (_req: Request, res: Response) => {
       return;
     }
     await scraper.page.goto(
-      'https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=FR&is_targeted_country=false&media_type=all&search_type=page&view_all_page_id=1605416949758617',
+      `https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=FR&is_targeted_country=false&media_type=all&search_type=page&view_all_page_id=${page_id}`,
       { waitUntil: 'networkidle2' }
     );
 
