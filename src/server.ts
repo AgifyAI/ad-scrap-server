@@ -31,8 +31,8 @@ const app: Express = express();
 // Configure timeouts for long-running requests (scraping can take 15-30 minutes)
 app.use((req, res, next) => {
   // Set timeout to 35 minutes (2100 seconds)
-  req.setTimeout(35 * 60 * 1000);
-  res.setTimeout(35 * 60 * 1000);
+  req.setTimeout(60 * 60 * 1000);
+  res.setTimeout(60 * 60 * 1000);
   next();
 });
 

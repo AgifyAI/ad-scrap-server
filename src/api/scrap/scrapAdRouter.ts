@@ -20,7 +20,7 @@ scrapAdsRegistry.registerPath({
 });
 
 async function myScrapingLogic(page: Page): Promise<any> {
-  const MAX_ITERATIONS = 10;
+  const MAX_ITERATIONS = 5;
 
   console.log('🔍 Starting scraping logic...');
 
