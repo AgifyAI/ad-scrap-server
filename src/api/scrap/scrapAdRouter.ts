@@ -251,8 +251,24 @@ async function myScrapingLogic(page: Page): Promise<any> {
         continue;
       }
 
-      console.log(`Waiting 2 seconds for modal to load...`);
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      console.log(`Waiting 20 seconds for modal to load...`);
+      await new Promise((resolve) => setTimeout(resolve, 20000));
+
+      console.log('📸 Taking screenshot for debugging...');
+      try {
+        const screenshotBuffer = await page.screenshot({
+          fullPage: true,
+        });
+        console.log(`Screenshot taken (${screenshotBuffer.length} bytes)`);
+
+        // Write screenshot to disk
+        const fs = require('fs');
+        const screenshotPath = `./modal_debug_${Date.now()}.png`;
+        fs.writeFileSync(screenshotPath, screenshotBuffer);
+        console.log(`Screenshot saved to: ${screenshotPath}`);
+      } catch (screenshotError: any) {
+        console.error('Failed to take screenshot:', screenshotError.message);
+      }
 
       console.log(`Looking for European Union transparency link...`);
       let extractedData = null;
@@ -392,10 +408,6 @@ async function myScrapingLogic(page: Page): Promise<any> {
                       const threeDotsPreviousSibling = threeDotsParent?.previousElementSibling;
                       if (threeDotsPreviousSibling) {
                         treeDotsSiblingFound = true;
-                        const threeDotsPreviousSiblingFirstSpan = threeDotsPreviousSibling.querySelector('span');
-                        if (threeDotsPreviousSiblingFirstSpan) {
-                          nickname = threeDotsPreviousSiblingFirstSpan.textContent?.trim();
-                        }
                       }
                     }
 
@@ -539,7 +551,7 @@ scrapAdsRouter.get('/', tokenAuth, async (req: Request, res: Response) => {
   }
 
   const scraper = new SimpleScraper({
-    headless: false,
+    headless: true,
     timeout: 30000,
   });
 
