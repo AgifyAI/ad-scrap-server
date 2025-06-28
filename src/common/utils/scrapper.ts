@@ -10,17 +10,20 @@ export class SimpleScraper {
   timeout: number;
   browser: Browser | null;
   page: Page | null;
+  sessionCookies: any[] | null;
 
-  constructor(options: { headless?: boolean; timeout?: number } = {}) {
+  constructor(options: { headless?: boolean; timeout?: number; sessionCookies?: any[]; proxy?: string } = {}) {
     this.headless = options.headless !== false; // Default to headless
     this.timeout = options.timeout || 30000;
     this.browser = null;
     this.page = null;
+    this.sessionCookies = options.sessionCookies || null;
   }
 
   async init() {
     console.log('🚀 Launching browser...');
-    this.browser = await puppeteer.launch({
+
+    const launchOptions: any = {
       headless: this.headless,
       executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
       args: [
@@ -36,7 +39,18 @@ export class SimpleScraper {
         '--disable-backgrounding-occluded-windows',
         '--disable-renderer-backgrounding',
       ],
-    });
+    };
+
+    // Add proxy support if provided
+    const proxyUrl = process.env.PROXY_URL; // You can set this via environment variable
+    if (proxyUrl) {
+      console.log(`🌐 Using proxy: ${proxyUrl}`);
+      if (launchOptions.args) {
+        launchOptions.args.push(`--proxy-server=${proxyUrl}`);
+      }
+    }
+
+    this.browser = await puppeteer.launch(launchOptions);
 
     this.page = await this.browser.newPage();
     await this.page.setDefaultTimeout(this.timeout);
@@ -82,10 +96,30 @@ export class SimpleScraper {
       }
     });
 
+    // Load session cookies if provided (helps avoid rate limiting)
+    if (this.sessionCookies && this.sessionCookies.length > 0) {
+      console.log(`🍪 Loading ${this.sessionCookies.length} session cookies...`);
+      await this.page.setCookie(...this.sessionCookies);
+      console.log('✅ Session cookies loaded');
+    }
+
     // Add human behavior (stealth plugin handles most automation hiding)
     await this.addHumanBehavior();
 
     console.log('✅ Browser ready!');
+  }
+
+  async saveCookies(): Promise<any[]> {
+    if (!this.page) return [];
+
+    try {
+      const cookies = await this.page.cookies();
+      console.log(`💾 Saved ${cookies.length} cookies for future sessions`);
+      return cookies;
+    } catch (error: any) {
+      console.error('Failed to save cookies:', error.message);
+      return [];
+    }
   }
 
   // Note: Most automation hiding is now handled by puppeteer-extra-plugin-stealth
@@ -119,10 +153,23 @@ export class SimpleScraper {
       setTimeout(() => clearInterval(moveInterval), 30000);
     });
 
-    // Add random viewport size variations
-    const width = 1280 + Math.floor(Math.random() * 200) - 100; // 1180-1380
-    const height = 720 + Math.floor(Math.random() * 200) - 100; // 620-820
-    await this.page.setViewport({ width, height });
+    // Add more aggressive viewport randomization to avoid fingerprinting
+    const viewports = [
+      { width: 1920, height: 1080 }, // Full HD
+      { width: 1366, height: 768 }, // Common laptop
+      { width: 1440, height: 900 }, // MacBook
+      { width: 1536, height: 864 }, // Windows
+      { width: 1280, height: 720 }, // HD
+      { width: 1600, height: 900 }, // Wide
+    ];
+    const randomViewport = viewports[Math.floor(Math.random() * viewports.length)];
+
+    // Add small random variations
+    randomViewport.width += Math.floor(Math.random() * 40) - 20;
+    randomViewport.height += Math.floor(Math.random() * 40) - 20;
+
+    console.log(`📱 Using viewport: ${randomViewport.width}x${randomViewport.height}`);
+    await this.page.setViewport(randomViewport);
 
     // Note: User-agent randomization is now handled by stealth plugin
   }

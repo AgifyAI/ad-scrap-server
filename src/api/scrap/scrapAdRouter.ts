@@ -38,6 +38,25 @@ async function myScrapingLogic(page: Page): Promise<any> {
   console.log('⏳ Initial wait for page load...');
   await new Promise((resolve) => setTimeout(resolve, 5000));
 
+  // Simulate normal browsing behavior to avoid rate limiting
+  console.log('🎭 Simulating normal browsing behavior...');
+
+  // Random browsing simulation (scroll, wait, hover)
+  for (let i = 0; i < 3; i++) {
+    await page.evaluate(() => {
+      // Random scroll
+      const scrollHeight = Math.random() * document.body.scrollHeight * 0.3;
+      window.scrollTo(0, scrollHeight);
+    });
+
+    // Random wait between 3-8 seconds
+    const waitTime = 3000 + Math.random() * 5000;
+    console.log(`🕐 Browsing simulation ${i + 1}/3 - waiting ${Math.round(waitTime)}ms`);
+    await new Promise((resolve) => setTimeout(resolve, waitTime));
+  }
+
+  console.log('✅ Browsing simulation completed');
+
   console.log('📄 Current URL:', await page.url());
   console.log('📄 Page title:', await page.title());
 
@@ -722,12 +741,41 @@ scrapAdsRouter.get('/', tokenAuth, async (req: Request, res: Response) => {
       res.status(response.statusCode).send(response);
       return;
     }
+    // Create a "warm" session by visiting Facebook main page first
+    console.log('🔥 Creating warm session...');
+
+    // First, visit Facebook main page to establish session
+    await scraper.page.goto('https://www.facebook.com', { waitUntil: 'networkidle2' });
+
+    // Wait and browse a bit
+    await new Promise((resolve) => setTimeout(resolve, 3000 + Math.random() * 2000));
+
+    // Simulate some browsing behavior
+    await scraper.page.evaluate(() => {
+      window.scrollTo(0, 300);
+    });
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    // Then navigate to ads library
+    console.log('📚 Navigating to ads library...');
     await scraper.page.goto(
-      `https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=FR&is_targeted_country=false&media_type=all&search_type=page&view_all_page_id=${page_id}`, // 1605416949758617
+      `https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=FR&is_targeted_country=false&media_type=all&search_type=page&view_all_page_id=${page_id}`,
       { waitUntil: 'networkidle2' }
     );
 
+    // Additional wait after reaching target page
+    const postNavigationWait = 5000 + Math.random() * 3000;
+    console.log(`⏳ Post-navigation wait: ${Math.round(postNavigationWait)}ms`);
+    await new Promise((resolve) => setTimeout(resolve, postNavigationWait));
+
     const result = await myScrapingLogic(scraper.page);
+
+    // Save cookies for future sessions to maintain warm state
+    const savedCookies = await scraper.saveCookies();
+    if (savedCookies.length > 0) {
+      // In a real implementation, you'd save these to a database or file
+      console.log('🍪 Session cookies saved for future use');
+    }
 
     console.log('📊 Test Results:');
     console.log(JSON.stringify(result, null, 2));
