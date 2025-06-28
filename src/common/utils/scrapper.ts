@@ -24,19 +24,27 @@ export class SimpleScraper {
         '--disable-dev-shm-usage',
         '--no-first-run',
         '--no-zygote',
-        // Removed problematic args that can block JS/rendering:
-        // '--disable-accelerated-2d-canvas',
-        // '--disable-gpu',
-        // '--disable-features=VizDisplayCompositor',
 
-        // Add more permissive args for better JS execution
-        '--enable-javascript',
+        // Maximum permissive settings for JS and network
         '--disable-web-security',
-        '--disable-features=VizDisplayCompositor',
+        '--disable-features=VizDisplayCompositor,TranslateUI',
+        '--disable-ipc-flooding-protection',
         '--disable-background-timer-throttling',
         '--disable-backgrounding-occluded-windows',
         '--disable-renderer-backgrounding',
         '--disable-field-trial-config',
+        '--disable-hang-monitor',
+        '--disable-prompt-on-repost',
+        '--disable-sync',
+        '--disable-translate',
+        '--disable-extensions',
+        '--allow-running-insecure-content',
+        '--ignore-certificate-errors',
+        '--ignore-ssl-errors',
+        '--ignore-certificate-errors-spki-list',
+        '--reduce-security-for-testing',
+        '--disable-permissions-api',
+        '--disable-popup-blocking',
       ],
     });
 
@@ -61,13 +69,32 @@ export class SimpleScraper {
       Pragma: 'no-cache',
     });
 
-    // Add error handling for page crashes
+    // Add comprehensive error handling and network monitoring
     this.page.on('error', (error) => {
       console.error('⚠️ Page error:', error.message);
     });
 
     this.page.on('pageerror', (error) => {
       console.error('⚠️ Page script error:', error.message);
+    });
+
+    // Monitor network requests to see if they're being blocked
+    this.page.on('requestfailed', (request) => {
+      console.error('⚠️ Request failed:', request.url(), 'Error:', request.failure()?.errorText);
+    });
+
+    this.page.on('response', (response) => {
+      if (!response.ok()) {
+        console.error('⚠️ HTTP error:', response.status(), response.url());
+      }
+    });
+
+    // Monitor console logs from the page
+    this.page.on('console', (msg) => {
+      const type = msg.type();
+      if (type === 'error' || type === 'warn') {
+        console.log(`🌐 Browser ${type}:`, msg.text());
+      }
     });
 
     console.log('✅ Browser ready!');

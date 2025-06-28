@@ -252,40 +252,86 @@ async function myScrapingLogic(page: Page): Promise<any> {
       }
 
       console.log(`Waiting 2 seconds for modal to load...`);
+
+      // Monitor network requests during modal loading
+      const networkRequests: any[] = [];
+      const requestListener = (request: any) => {
+        if (request.url().includes('facebook.com') || request.url().includes('fbcdn.net')) {
+          networkRequests.push({
+            url: request.url(),
+            method: request.method(),
+            resourceType: request.resourceType(),
+          });
+        }
+      };
+
+      const responseListener = (response: any) => {
+        if (response.url().includes('facebook.com') || response.url().includes('fbcdn.net')) {
+          console.log(`📡 Network: ${response.status()} ${response.url().substring(0, 100)}...`);
+        }
+      };
+
+      page.on('request', requestListener);
+      page.on('response', responseListener);
+
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      console.log('📸 Taking screenshot for debugging...');
-      try {
-        const screenshotBuffer = await page.screenshot({
-          fullPage: true,
-        });
-        console.log(`Screenshot taken (${screenshotBuffer.length} bytes)`);
+      // Stop monitoring and report
+      page.off('request', requestListener);
+      page.off('response', responseListener);
 
-        // Write screenshot to disk in /tmp (has write permissions)
-        const fs = require('fs');
-        const screenshotPath = `/tmp/modal_debug_${Date.now()}.png`;
-        fs.writeFileSync(screenshotPath, screenshotBuffer);
-        console.log(`Screenshot saved to: ${screenshotPath}`);
-      } catch (screenshotError: any) {
-        console.error('Failed to take screenshot:', screenshotError.message);
+      console.log(`📊 Network requests during modal load: ${networkRequests.length}`);
+      if (networkRequests.length > 0) {
+        console.log('🔗 Request types:', networkRequests.map((r) => r.resourceType).join(', '));
       }
+
+      // console.log('📸 Taking screenshot for debugging...');
+      // try {
+      //   const screenshotBuffer = await page.screenshot({
+      //     fullPage: true,
+      //   });
+      //   console.log(`Screenshot taken (${screenshotBuffer.length} bytes)`);
+
+      //   // Write screenshot to disk in /tmp (has write permissions)
+      //   const fs = require('fs');
+      //   const screenshotPath = `/tmp/modal_debug_${Date.now()}.png`;
+      //   fs.writeFileSync(screenshotPath, screenshotBuffer);
+      //   console.log(`Screenshot saved to: ${screenshotPath}`);
+      // } catch (screenshotError: any) {
+      //   console.error('Failed to take screenshot:', screenshotError.message);
+      // }
 
       console.log(`Looking for European Union transparency link...`);
       let extractedData = null;
 
-      // Debug: Check what's actually in the modal
+      // Debug: Comprehensive modal analysis
       const modalDebugInfo = await page.evaluate(() => {
         const dialogs = document.querySelectorAll('div[role="dialog"]');
         const debugInfo = [];
 
         for (let i = 0; i < dialogs.length; i++) {
           const dialog = dialogs[i];
+
+          // Check for loading indicators
+          const loadingElements = dialog.querySelectorAll('[data-testid*="loading"], .loading, [aria-busy="true"]');
+
+          // Check for error messages
+          const errorElements = dialog.querySelectorAll('[data-testid*="error"], .error-message');
+
+          // Check for network requests indicators
+          const networkElements = dialog.querySelectorAll('img[src*="static"], script[src*="static"]');
+
           debugInfo.push({
             index: i,
-            innerHTML: dialog.innerHTML.substring(0, 500), // First 500 chars
-            textContent: dialog.textContent?.substring(0, 200), // First 200 chars
+            innerHTML: dialog.innerHTML.substring(0, 1000), // More content
+            textContent: dialog.textContent?.substring(0, 500), // More text
             childrenCount: dialog.children.length,
             hasContent: dialog.textContent && dialog.textContent.trim().length > 0,
+            loadingIndicators: loadingElements.length,
+            errorIndicators: errorElements.length,
+            networkElements: networkElements.length,
+            classNames: dialog.className,
+            attributes: Array.from(dialog.attributes).map((attr) => `${attr.name}="${attr.value}"`),
           });
         }
 
@@ -294,10 +340,50 @@ async function myScrapingLogic(page: Page): Promise<any> {
           dialogsInfo: debugInfo,
           pageTitle: document.title,
           pageUrl: window.location.href,
+          jsErrors: window.console ? 'Console available' : 'No console',
+          userAgent: navigator.userAgent,
         };
       });
 
       console.log('🔍 Modal debug info:', JSON.stringify(modalDebugInfo, null, 2));
+
+      // If modal is empty, try to force content loading
+      if (modalDebugInfo.dialogsFound > 0 && modalDebugInfo.dialogsInfo[0] && !modalDebugInfo.dialogsInfo[0].hasContent) {
+        console.log('🔄 Modal appears empty, attempting to force content loading...');
+
+        try {
+          await page.evaluate(() => {
+            const dialog = document.querySelector('div[role="dialog"]');
+            if (dialog) {
+              // Try to trigger various events that might cause content to load
+              ['focus', 'mouseover', 'mouseenter', 'click'].forEach((eventType) => {
+                const event = new Event(eventType, { bubbles: true });
+                dialog.dispatchEvent(event);
+              });
+
+              // Try scrolling within the modal
+              dialog.scrollTop = 10;
+              dialog.scrollTop = 0;
+
+              // Try to find and click any refresh/reload buttons
+              const refreshButtons = dialog.querySelectorAll(
+                '[aria-label*="refresh"], [aria-label*="reload"], [title*="refresh"], [title*="reload"]'
+              );
+              refreshButtons.forEach((btn) => {
+                if (btn instanceof HTMLElement) {
+                  btn.click();
+                }
+              });
+            }
+          });
+
+          // Wait after attempting to trigger content
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+          console.log('✅ Content loading triggers attempted');
+        } catch (triggerError: any) {
+          console.log('⚠️ Failed to trigger content loading:', triggerError.message);
+        }
+      }
 
       const transparencyResult = await page.evaluate(() => {
         const allLinkDivs = document.querySelectorAll('[role="link"]');
