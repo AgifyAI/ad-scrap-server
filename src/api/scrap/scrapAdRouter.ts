@@ -261,9 +261,9 @@ async function myScrapingLogic(page: Page): Promise<any> {
         });
         console.log(`Screenshot taken (${screenshotBuffer.length} bytes)`);
 
-        // Write screenshot to disk
+        // Write screenshot to disk in /tmp (has write permissions)
         const fs = require('fs');
-        const screenshotPath = `./modal_debug_${Date.now()}.png`;
+        const screenshotPath = `/tmp/modal_debug_${Date.now()}.png`;
         fs.writeFileSync(screenshotPath, screenshotBuffer);
         console.log(`Screenshot saved to: ${screenshotPath}`);
       } catch (screenshotError: any) {
