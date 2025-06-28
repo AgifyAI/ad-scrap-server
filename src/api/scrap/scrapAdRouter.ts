@@ -20,7 +20,7 @@ scrapAdsRegistry.registerPath({
 });
 
 async function myScrapingLogic(page: Page): Promise<any> {
-  const MAX_ITERATIONS = 3;
+  const MAX_ITERATIONS = 2000;
 
   console.log('🔍 Starting scraping logic...');
 
@@ -50,7 +50,7 @@ async function myScrapingLogic(page: Page): Promise<any> {
     });
 
     // Random wait between 3-8 seconds
-    const waitTime = 3000 + Math.random() * 5000;
+    const waitTime = 3000 + Math.random() * 2000;
     console.log(`🕐 Browsing simulation ${i + 1}/3 - waiting ${Math.round(waitTime)}ms`);
     await new Promise((resolve) => setTimeout(resolve, waitTime));
   }
@@ -78,7 +78,7 @@ async function myScrapingLogic(page: Page): Promise<any> {
 
   let previousHeight = 0;
   let scrollAttempts = 0;
-  const MAX_SCROLL_ATTEMPTS = 1;
+  const MAX_SCROLL_ATTEMPTS = 40;
 
   console.log('Starting scroll to load more ads...');
 
@@ -182,7 +182,7 @@ async function myScrapingLogic(page: Page): Promise<any> {
       }
 
       // Wait longer and ensure page is completely stable (with randomness)
-      const stabilityDelay = 1500 + Math.random() * 1000; // 1.5-2.5 seconds
+      const stabilityDelay = 500 + Math.random() * 500; // 0.5-1 seconds
       await new Promise((resolve) => setTimeout(resolve, stabilityDelay));
 
       // More robust page stability check
@@ -274,7 +274,7 @@ async function myScrapingLogic(page: Page): Promise<any> {
       console.log(`Waiting with human-like delays for modal to load...`);
 
       // Add random delay to appear more human (2-5 seconds)
-      const randomDelay = 2000 + Math.random() * 3000;
+      const randomDelay = 500 + Math.random() * 500;
       console.log(`Using random delay: ${Math.round(randomDelay)}ms`);
 
       // Monitor network requests during modal loading
@@ -346,7 +346,7 @@ async function myScrapingLogic(page: Page): Promise<any> {
         });
 
         // Wait for "reading" time
-        await new Promise((resolve) => setTimeout(resolve, 1500 + Math.random() * 1000));
+        await new Promise((resolve) => setTimeout(resolve, 500 + Math.random() * 500));
         console.log('✅ Human interaction simulation completed');
       } catch (humanError: any) {
         console.log('⚠️ Human interaction simulation failed:', humanError.message);
@@ -445,7 +445,7 @@ async function myScrapingLogic(page: Page): Promise<any> {
           });
 
           // Wait after attempting to trigger content
-          await new Promise((resolve) => setTimeout(resolve, 3000));
+          await new Promise((resolve) => setTimeout(resolve, 1000));
           console.log('✅ Content loading triggers attempted');
         } catch (triggerError: any) {
           console.log('⚠️ Failed to trigger content loading:', triggerError.message);
@@ -525,8 +525,8 @@ async function myScrapingLogic(page: Page): Promise<any> {
       // console.log(`Ad buyer result:`, adBuyerResult);
 
       if (transparencyResult.found) {
-        console.log(`European Union transparency link clicked, waiting 2 second...`);
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        console.log(`European Union transparency link clicked, waiting 1 second...`);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         // Add page stability check
         console.log(`Waiting page to stabilize...`);
         await page.waitForFunction(
@@ -626,7 +626,7 @@ async function myScrapingLogic(page: Page): Promise<any> {
           };
         });
 
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         console.log(`Data extraction result:`, extractedData);
       } else {
