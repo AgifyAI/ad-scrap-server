@@ -251,8 +251,8 @@ async function myScrapingLogic(page: Page): Promise<any> {
         continue;
       }
 
-      console.log(`Waiting 20 seconds for modal to load...`);
-      await new Promise((resolve) => setTimeout(resolve, 20000));
+      console.log(`Waiting 2 seconds for modal to load...`);
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       console.log('📸 Taking screenshot for debugging...');
       try {
@@ -272,6 +272,32 @@ async function myScrapingLogic(page: Page): Promise<any> {
 
       console.log(`Looking for European Union transparency link...`);
       let extractedData = null;
+
+      // Debug: Check what's actually in the modal
+      const modalDebugInfo = await page.evaluate(() => {
+        const dialogs = document.querySelectorAll('div[role="dialog"]');
+        const debugInfo = [];
+
+        for (let i = 0; i < dialogs.length; i++) {
+          const dialog = dialogs[i];
+          debugInfo.push({
+            index: i,
+            innerHTML: dialog.innerHTML.substring(0, 500), // First 500 chars
+            textContent: dialog.textContent?.substring(0, 200), // First 200 chars
+            childrenCount: dialog.children.length,
+            hasContent: dialog.textContent && dialog.textContent.trim().length > 0,
+          });
+        }
+
+        return {
+          dialogsFound: dialogs.length,
+          dialogsInfo: debugInfo,
+          pageTitle: document.title,
+          pageUrl: window.location.href,
+        };
+      });
+
+      console.log('🔍 Modal debug info:', JSON.stringify(modalDebugInfo, null, 2));
 
       const transparencyResult = await page.evaluate(() => {
         const allLinkDivs = document.querySelectorAll('[role="link"]');
