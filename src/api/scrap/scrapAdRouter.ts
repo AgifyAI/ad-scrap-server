@@ -20,7 +20,7 @@ scrapAdsRegistry.registerPath({
 });
 
 async function myScrapingLogic(page: Page): Promise<any> {
-  const MAX_ITERATIONS = 100;
+  const MAX_ITERATIONS = 5;
 
   console.log('🔍 Starting scraping logic...');
 
@@ -263,6 +263,9 @@ async function myScrapingLogic(page: Page): Promise<any> {
 
         for (let linkDiv of Array.from(allLinkDivs)) {
           const allDescendantDivs = linkDiv.querySelectorAll('div');
+          Array.from(allDescendantDivs).forEach((div) => {
+            console.log(`Div text content:`, div.textContent);
+          });
           const hasTransparencyText = Array.from(allDescendantDivs).some(
             (div) =>
               div.textContent &&
