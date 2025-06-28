@@ -741,20 +741,6 @@ scrapAdsRouter.get('/', tokenAuth, async (req: Request, res: Response) => {
       res.status(response.statusCode).send(response);
       return;
     }
-    // Create a "warm" session by visiting Facebook main page first
-    console.log('🔥 Creating warm session...');
-
-    // First, visit Facebook main page to establish session
-    await scraper.page.goto('https://www.facebook.com', { waitUntil: 'networkidle2' });
-
-    // Wait and browse a bit
-    await new Promise((resolve) => setTimeout(resolve, 3000 + Math.random() * 2000));
-
-    // Simulate some browsing behavior
-    await scraper.page.evaluate(() => {
-      window.scrollTo(0, 300);
-    });
-    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // Then navigate to ads library
     console.log('📚 Navigating to ads library...');

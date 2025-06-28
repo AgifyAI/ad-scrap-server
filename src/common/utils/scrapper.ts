@@ -11,6 +11,7 @@ export class SimpleScraper {
   browser: Browser | null;
   page: Page | null;
   sessionCookies: any[] | null;
+  proxyConfig: { host: string; port: number; username: string; password: string } | null;
 
   constructor(options: { headless?: boolean; timeout?: number; sessionCookies?: any[]; proxy?: string } = {}) {
     this.headless = options.headless !== false; // Default to headless
@@ -18,6 +19,22 @@ export class SimpleScraper {
     this.browser = null;
     this.page = null;
     this.sessionCookies = options.sessionCookies || null;
+
+    // Configure Bright Data proxy residential
+    // this.proxyConfig = {
+    //   host: 'brd.superproxy.io',
+    //   port: 33335,
+    //   username: 'brd-customer-hl_507845b1-zone-residential_proxy1',
+    //   password: '7h9e8uqpqlyn',
+    // };
+
+    // Configure Bright Data proxy datacenter
+    this.proxyConfig = {
+      host: 'brd.superproxy.io',
+      port: 33335,
+      username: 'brd-customer-hl_507845b1-zone-datacenter_proxy1',
+      password: '4ez6bjx2a46p',
+    };
   }
 
   async init() {
@@ -26,6 +43,7 @@ export class SimpleScraper {
     const launchOptions: any = {
       headless: this.headless,
       executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+      ignoreHTTPSErrors: true, // Important for proxy
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -41,18 +59,37 @@ export class SimpleScraper {
       ],
     };
 
-    // Add proxy support if provided
-    const proxyUrl = process.env.PROXY_URL; // You can set this via environment variable
-    if (proxyUrl) {
-      console.log(`🌐 Using proxy: ${proxyUrl}`);
+    // Configure Bright Data proxy
+    if (this.proxyConfig) {
+      const proxyUrl = `${this.proxyConfig.host}:${this.proxyConfig.port}`;
+      console.log(`🌐 Using Bright Data proxy: ${proxyUrl}`);
       if (launchOptions.args) {
         launchOptions.args.push(`--proxy-server=${proxyUrl}`);
+        // Add SSL/Certificate options for proxy
+        launchOptions.args.push('--ignore-certificate-errors');
+        launchOptions.args.push('--ignore-ssl-errors');
+        launchOptions.args.push('--ignore-certificate-errors-spki-list');
+        launchOptions.args.push('--disable-extensions-http-throttling');
+        launchOptions.args.push('--accept-lang=en-US,en;q=0.9');
       }
     }
+
+    console.log('launchOptions.args : ', launchOptions.args);
 
     this.browser = await puppeteer.launch(launchOptions);
 
     this.page = await this.browser.newPage();
+
+    // Configure proxy authentication if proxy is configured
+    if (this.proxyConfig) {
+      console.log('🔐 Configuring proxy authentication...');
+      await this.page.authenticate({
+        username: this.proxyConfig.username,
+        password: this.proxyConfig.password,
+      });
+      console.log('✅ Proxy authentication configured');
+    }
+
     await this.page.setDefaultTimeout(this.timeout);
 
     // Set viewport for consistency
