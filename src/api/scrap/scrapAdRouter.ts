@@ -260,12 +260,12 @@ async function myScrapingLogic(page: Page): Promise<any> {
       const transparencyResult = await page.evaluate(() => {
         const allLinkDivs = document.querySelectorAll('div[role="link"]');
         let transparencyLink = null;
+        let textContents: (string | undefined)[] = [];
 
         for (let linkDiv of Array.from(allLinkDivs)) {
           const allDescendantDivs = linkDiv.querySelectorAll('div');
-          Array.from(allDescendantDivs).forEach((div) => {
-            console.log(`Div text content:`, div.textContent);
-          });
+          textContents = Array.from(allDescendantDivs).map((div) => div.textContent?.trim());
+
           const hasTransparencyText = Array.from(allDescendantDivs).some(
             (div) =>
               div.textContent &&
@@ -283,11 +283,11 @@ async function myScrapingLogic(page: Page): Promise<any> {
         }
 
         if (!transparencyLink) {
-          return { found: false, error: 'European Union transparency link not found' };
+          return { found: false, error: 'European Union transparency link not found', textContents };
         }
 
         (transparencyLink as HTMLElement).click();
-        return { found: true, clicked: true, transparencyText: transparencyLink.textContent?.trim() };
+        return { found: true, clicked: true, transparencyText: transparencyLink.textContent?.trim(), textContents };
       });
 
       // const adBuyerResult = await page.evaluate(() => {
