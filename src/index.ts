@@ -7,9 +7,9 @@ const server = app.listen(env.PORT, () => {
 });
 
 // Configure server timeout for long-running requests (35 minutes)
-server.timeout = 60 * 60 * 1000; // 60 minutes
-server.keepAliveTimeout = 61 * 60 * 1000; // 61 minutes (slightly higher than timeout)
-server.headersTimeout = 62 * 60 * 1000; // 62 minutes (higher than keepAliveTimeout)
+server.timeout = 90 * 60 * 1000; // 90 minutes
+server.keepAliveTimeout = 91 * 60 * 1000; // 91 minutes (slightly higher than timeout)
+server.headersTimeout = 92 * 60 * 1000; // 92 minutes (higher than keepAliveTimeout)
 
 const onCloseSignal = () => {
   logger.info('sigint received, shutting down');
