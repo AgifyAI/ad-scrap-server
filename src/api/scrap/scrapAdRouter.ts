@@ -20,7 +20,7 @@ scrapAdsRegistry.registerPath({
 });
 
 async function myScrapingLogic(page: Page): Promise<any> {
-  const MAX_ITERATIONS = 5;
+  const MAX_ITERATIONS = 3;
 
   console.log('🔍 Starting scraping logic...');
 
@@ -251,8 +251,8 @@ async function myScrapingLogic(page: Page): Promise<any> {
         continue;
       }
 
-      console.log(`Waiting 2 seconds for modal to load...`);
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      console.log(`Waiting 5 seconds for modal to load...`);
+      await new Promise((resolve) => setTimeout(resolve, 5000));
 
       console.log(`Looking for European Union transparency link...`);
       let extractedData = null;
