@@ -59,7 +59,7 @@ async function myScrapingLogic(page: Page): Promise<any> {
 
   let previousHeight = 0;
   let scrollAttempts = 0;
-  const MAX_SCROLL_ATTEMPTS = 40;
+  const MAX_SCROLL_ATTEMPTS = 1;
 
   console.log('Starting scroll to load more ads...');
 
@@ -251,14 +251,14 @@ async function myScrapingLogic(page: Page): Promise<any> {
         continue;
       }
 
-      console.log(`Waiting 5 seconds for modal to load...`);
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      console.log(`Waiting 2 seconds for modal to load...`);
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       console.log(`Looking for European Union transparency link...`);
       let extractedData = null;
 
       const transparencyResult = await page.evaluate(() => {
-        const allLinkDivs = document.querySelectorAll('div[role="link"]');
+        const allLinkDivs = document.querySelectorAll('[role="link"]');
         let transparencyLink = null;
         let textContents: (string | undefined)[] = [];
 
