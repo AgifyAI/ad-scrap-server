@@ -283,11 +283,17 @@ async function myScrapingLogic(page: Page): Promise<any> {
         }
 
         if (!transparencyLink) {
-          return { found: false, error: 'European Union transparency link not found', textContents };
+          return { found: false, error: 'European Union transparency link not found', textContents, linkDivsLength: Array.from(allLinkDivs).length };
         }
 
         (transparencyLink as HTMLElement).click();
-        return { found: true, clicked: true, transparencyText: transparencyLink.textContent?.trim(), textContents };
+        return {
+          found: true,
+          clicked: true,
+          transparencyText: transparencyLink.textContent?.trim(),
+          textContents,
+          linkDivsLength: Array.from(allLinkDivs).length,
+        };
       });
 
       // const adBuyerResult = await page.evaluate(() => {
