@@ -1,4 +1,9 @@
-import puppeteer, { Browser, Page } from 'puppeteer';
+import puppeteer from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import { Browser, Page } from 'puppeteer';
+
+// Add stealth plugin to avoid detection
+puppeteer.use(StealthPlugin());
 
 export class SimpleScraper {
   headless: boolean;
@@ -24,27 +29,12 @@ export class SimpleScraper {
         '--disable-dev-shm-usage',
         '--no-first-run',
         '--no-zygote',
-
-        // Maximum permissive settings for JS and network
+        // Let stealth plugin handle most detection avoidance
         '--disable-web-security',
-        '--disable-features=VizDisplayCompositor,TranslateUI',
-        '--disable-ipc-flooding-protection',
+        '--disable-features=VizDisplayCompositor',
         '--disable-background-timer-throttling',
         '--disable-backgrounding-occluded-windows',
         '--disable-renderer-backgrounding',
-        '--disable-field-trial-config',
-        '--disable-hang-monitor',
-        '--disable-prompt-on-repost',
-        '--disable-sync',
-        '--disable-translate',
-        '--disable-extensions',
-        '--allow-running-insecure-content',
-        '--ignore-certificate-errors',
-        '--ignore-ssl-errors',
-        '--ignore-certificate-errors-spki-list',
-        '--reduce-security-for-testing',
-        '--disable-permissions-api',
-        '--disable-popup-blocking',
       ],
     });
 
@@ -54,19 +44,14 @@ export class SimpleScraper {
     // Set viewport for consistency
     await this.page.setViewport({ width: 1280, height: 720 });
 
-    // Set user agent to avoid detection (updated to recent Chrome)
-    await this.page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36');
-
-    // Explicitly enable JavaScript and remove restrictions
+    // Note: Stealth plugin automatically handles user-agent and most headers
+    // Explicitly enable JavaScript
     await this.page.setJavaScriptEnabled(true);
 
-    // Set extra HTTP headers to appear more like a real browser
+    // Set minimal additional headers (stealth plugin handles the rest)
     await this.page.setExtraHTTPHeaders({
       'Accept-Language': 'en-US,en;q=0.9,fr;q=0.8',
-      'Accept-Encoding': 'gzip, deflate, br',
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-      'Cache-Control': 'no-cache',
-      Pragma: 'no-cache',
+      DNT: '1',
     });
 
     // Add comprehensive error handling and network monitoring
@@ -97,7 +82,49 @@ export class SimpleScraper {
       }
     });
 
+    // Add human behavior (stealth plugin handles most automation hiding)
+    await this.addHumanBehavior();
+
     console.log('✅ Browser ready!');
+  }
+
+  // Note: Most automation hiding is now handled by puppeteer-extra-plugin-stealth
+  // This function is kept for any additional customizations if needed
+
+  async addHumanBehavior() {
+    if (!this.page) return;
+
+    // Random mouse movements to simulate human behavior
+    await this.page.evaluate(() => {
+      // Simulate random mouse movements
+      let mouseX = Math.random() * window.innerWidth;
+      let mouseY = Math.random() * window.innerHeight;
+
+      const moveInterval = setInterval(() => {
+        mouseX += (Math.random() - 0.5) * 20;
+        mouseY += (Math.random() - 0.5) * 20;
+
+        mouseX = Math.max(0, Math.min(window.innerWidth, mouseX));
+        mouseY = Math.max(0, Math.min(window.innerHeight, mouseY));
+
+        const event = new MouseEvent('mousemove', {
+          clientX: mouseX,
+          clientY: mouseY,
+          bubbles: true,
+        });
+        document.dispatchEvent(event);
+      }, 1000 + Math.random() * 2000); // Every 1-3 seconds
+
+      // Stop after 30 seconds
+      setTimeout(() => clearInterval(moveInterval), 30000);
+    });
+
+    // Add random viewport size variations
+    const width = 1280 + Math.floor(Math.random() * 200) - 100; // 1180-1380
+    const height = 720 + Math.floor(Math.random() * 200) - 100; // 620-820
+    await this.page.setViewport({ width, height });
+
+    // Note: User-agent randomization is now handled by stealth plugin
   }
 
   async close() {

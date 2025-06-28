@@ -162,8 +162,9 @@ async function myScrapingLogic(page: Page): Promise<any> {
         throw new Error('Page was closed');
       }
 
-      // Wait longer and ensure page is completely stable
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Wait longer and ensure page is completely stable (with randomness)
+      const stabilityDelay = 1500 + Math.random() * 1000; // 1.5-2.5 seconds
+      await new Promise((resolve) => setTimeout(resolve, stabilityDelay));
 
       // More robust page stability check
       const isPageStable = await page.evaluate(() => {
@@ -251,7 +252,11 @@ async function myScrapingLogic(page: Page): Promise<any> {
         continue;
       }
 
-      console.log(`Waiting 2 seconds for modal to load...`);
+      console.log(`Waiting with human-like delays for modal to load...`);
+
+      // Add random delay to appear more human (2-5 seconds)
+      const randomDelay = 2000 + Math.random() * 3000;
+      console.log(`Using random delay: ${Math.round(randomDelay)}ms`);
 
       // Monitor network requests during modal loading
       const networkRequests: any[] = [];
@@ -274,7 +279,7 @@ async function myScrapingLogic(page: Page): Promise<any> {
       page.on('request', requestListener);
       page.on('response', responseListener);
 
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, randomDelay));
 
       // Stop monitoring and report
       page.off('request', requestListener);
@@ -283,6 +288,49 @@ async function myScrapingLogic(page: Page): Promise<any> {
       console.log(`📊 Network requests during modal load: ${networkRequests.length}`);
       if (networkRequests.length > 0) {
         console.log('🔗 Request types:', networkRequests.map((r) => r.resourceType).join(', '));
+      }
+
+      // Simulate human interaction with the modal to avoid detection
+      console.log('🎭 Simulating human interaction with modal...');
+      try {
+        await page.evaluate(() => {
+          const modal = document.querySelector('div[role="dialog"]');
+          if (modal) {
+            // Simulate reading behavior - slow scroll through modal
+            let scrollAmount = 0;
+            const scrollInterval = setInterval(() => {
+              scrollAmount += 50;
+              modal.scrollTop = scrollAmount;
+
+              if (scrollAmount > 200) {
+                clearInterval(scrollInterval);
+                // Scroll back to top
+                modal.scrollTop = 0;
+              }
+            }, 200);
+
+            // Add subtle mouse movements within modal
+            const rect = modal.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            // Simulate hovering over different parts of the modal
+            ['mousemove', 'mouseenter'].forEach((eventType) => {
+              const event = new MouseEvent(eventType, {
+                clientX: centerX + (Math.random() - 0.5) * 100,
+                clientY: centerY + (Math.random() - 0.5) * 100,
+                bubbles: true,
+              });
+              modal.dispatchEvent(event);
+            });
+          }
+        });
+
+        // Wait for "reading" time
+        await new Promise((resolve) => setTimeout(resolve, 1500 + Math.random() * 1000));
+        console.log('✅ Human interaction simulation completed');
+      } catch (humanError: any) {
+        console.log('⚠️ Human interaction simulation failed:', humanError.message);
       }
 
       // console.log('📸 Taking screenshot for debugging...');
