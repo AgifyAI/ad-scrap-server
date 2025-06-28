@@ -20,7 +20,7 @@ scrapAdsRegistry.registerPath({
 });
 
 async function myScrapingLogic(page: Page): Promise<any> {
-  const MAX_ITERATIONS = 2000;
+  const MAX_ITERATIONS = 100;
 
   console.log('🔍 Starting scraping logic...');
 
@@ -455,6 +455,14 @@ async function myScrapingLogic(page: Page): Promise<any> {
 
         return { found: false };
       });
+
+      console.log(`Close result:`, closeResult);
+
+      if (closeResult.found) {
+        console.log(`Close button clicked, waiting 1 second...`);
+      } else {
+        console.log(`Close button not found`);
+      }
 
       console.log(`Waiting 1 seconds for page to stabilize...`);
       await new Promise((resolve) => setTimeout(resolve, 1000));
