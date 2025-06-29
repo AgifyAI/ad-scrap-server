@@ -732,6 +732,7 @@ scrapAdsRouter.get('/', tokenAuth, async (req: Request, res: Response) => {
   const scraper = new SimpleScraper({
     headless: true,
     timeout: 30000,
+    useFreeProxies: false,
   });
 
   try {

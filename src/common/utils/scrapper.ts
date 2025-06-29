@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import { Browser, Page } from 'puppeteer';
+import { proxyRotator, ProxyConfig, initializeProxySystem } from './freeProxies';
 
 // Add stealth plugin to avoid detection
 puppeteer.use(StealthPlugin());
@@ -11,15 +12,19 @@ export class SimpleScraper {
   browser: Browser | null;
   page: Page | null;
   sessionCookies: any[] | null;
-  proxyConfig: { host: string; port: number; username: string; password: string } | null;
+  currentProxy: ProxyConfig | null;
+  useFreeProxies: boolean;
 
-  constructor(options: { headless?: boolean; timeout?: number; sessionCookies?: any[]; proxy?: string } = {}) {
+  constructor(options: { headless?: boolean; timeout?: number; sessionCookies?: any[]; useFreeProxies?: boolean } = {}) {
     this.headless = options.headless !== false; // Default to headless
     this.timeout = options.timeout || 30000;
     this.browser = null;
     this.page = null;
     this.sessionCookies = options.sessionCookies || null;
+    this.currentProxy = null;
+    this.useFreeProxies = options.useFreeProxies !== false; // Default to use free proxies
 
+    // Legacy Bright Data proxy configurations (commented out)
     // Configure Bright Data proxy residential
     // this.proxyConfig = {
     //   host: 'brd.superproxy.io',
@@ -29,16 +34,29 @@ export class SimpleScraper {
     // };
 
     // Configure Bright Data proxy datacenter
-    this.proxyConfig = {
-      host: 'brd.superproxy.io',
-      port: 33335,
-      username: 'brd-customer-hl_507845b1-zone-datacenter_proxy1',
-      password: '4ez6bjx2a46p',
-    };
+    // this.proxyConfig = {
+    //   host: 'brd.superproxy.io',
+    //   port: 33335,
+    //   username: 'brd-customer-hl_507845b1-zone-datacenter_proxy1',
+    //   password: '4ez6bjx2a46p',
+    // };
   }
 
   async init() {
     console.log('🚀 Launching browser...');
+
+    // Initialize free proxy system if enabled
+    if (this.useFreeProxies) {
+      console.log('🌐 Initializing free proxy system...');
+      await initializeProxySystem();
+      this.currentProxy = proxyRotator.getNextProxy();
+
+      if (this.currentProxy) {
+        console.log(`🔄 Selected proxy: ${this.currentProxy.host}:${this.currentProxy.port} (${this.currentProxy.type})`);
+      } else {
+        console.log('⚠️ No proxy available, proceeding without proxy');
+      }
+    }
 
     const launchOptions: any = {
       headless: this.headless,
@@ -59,10 +77,11 @@ export class SimpleScraper {
       ],
     };
 
-    // Configure Bright Data proxy
-    if (this.proxyConfig) {
-      const proxyUrl = `${this.proxyConfig.host}:${this.proxyConfig.port}`;
-      console.log(`🌐 Using Bright Data proxy: ${proxyUrl}`);
+    // Configure free proxy if available
+    if (this.currentProxy && this.useFreeProxies) {
+      const proxyUrl = `${this.currentProxy.host}:${this.currentProxy.port}`;
+      console.log(`🌐 Using free proxy: ${proxyUrl} (${this.currentProxy.type})`);
+
       if (launchOptions.args) {
         launchOptions.args.push(`--proxy-server=${proxyUrl}`);
         // Add SSL/Certificate options for proxy
@@ -80,12 +99,12 @@ export class SimpleScraper {
 
     this.page = await this.browser.newPage();
 
-    // Configure proxy authentication if proxy is configured
-    if (this.proxyConfig) {
+    // Configure proxy authentication if proxy has credentials
+    if (this.currentProxy && this.currentProxy.username && this.currentProxy.password) {
       console.log('🔐 Configuring proxy authentication...');
       await this.page.authenticate({
-        username: this.proxyConfig.username,
-        password: this.proxyConfig.password,
+        username: this.currentProxy.username,
+        password: this.currentProxy.password,
       });
       console.log('✅ Proxy authentication configured');
     }
@@ -108,6 +127,7 @@ export class SimpleScraper {
     // Add comprehensive error handling and network monitoring
     this.page.on('error', (error) => {
       console.error('⚠️ Page error:', error.message);
+      this.handleProxyError();
     });
 
     this.page.on('pageerror', (error) => {
@@ -117,11 +137,20 @@ export class SimpleScraper {
     // Monitor network requests to see if they're being blocked
     this.page.on('requestfailed', (request) => {
       console.error('⚠️ Request failed:', request.url(), 'Error:', request.failure()?.errorText);
+      // If proxy-related error, try to switch proxy
+      const errorText = request.failure()?.errorText;
+      if (errorText && (errorText.includes('PROXY') || errorText.includes('ERR_TUNNEL_CONNECTION_FAILED'))) {
+        this.handleProxyError();
+      }
     });
 
     this.page.on('response', (response) => {
       if (!response.ok()) {
         console.error('⚠️ HTTP error:', response.status(), response.url());
+        // Handle proxy-related HTTP errors
+        if (response.status() === 407 || response.status() === 502 || response.status() === 503) {
+          this.handleProxyError();
+        }
       }
     });
 
@@ -144,6 +173,76 @@ export class SimpleScraper {
     await this.addHumanBehavior();
 
     console.log('✅ Browser ready!');
+  }
+
+  /**
+   * Handle proxy errors by switching to a new proxy
+   */
+  private handleProxyError() {
+    if (this.currentProxy && this.useFreeProxies) {
+      console.log('🔄 Handling proxy error, marking current proxy as failed...');
+      proxyRotator.markProxyAsFailed(this.currentProxy);
+
+      // Get next proxy for future use (would require browser restart)
+      const nextProxy = proxyRotator.getNextProxy();
+      if (nextProxy) {
+        console.log(`🔄 Next available proxy: ${nextProxy.host}:${nextProxy.port}`);
+      } else {
+        console.log('⚠️ No more proxies available');
+      }
+    }
+  }
+
+  /**
+   * Restart browser with a new proxy
+   */
+  async restartWithNewProxy(): Promise<boolean> {
+    if (!this.useFreeProxies) {
+      console.log('⚠️ Free proxies disabled, cannot restart with new proxy');
+      return false;
+    }
+
+    console.log('🔄 Restarting browser with new proxy...');
+
+    // Save cookies before closing
+    const cookies = await this.saveCookies();
+
+    // Close current browser
+    await this.close();
+
+    // Get new proxy
+    this.currentProxy = proxyRotator.getNextProxy();
+
+    if (!this.currentProxy) {
+      console.log('❌ No proxy available for restart');
+      return false;
+    }
+
+    // Restore cookies
+    this.sessionCookies = cookies;
+
+    // Reinitialize with new proxy
+    await this.init();
+
+    console.log('✅ Browser restarted with new proxy');
+    return true;
+  }
+
+  /**
+   * Get current proxy information
+   */
+  getCurrentProxyInfo(): ProxyConfig | null {
+    return this.currentProxy;
+  }
+
+  /**
+   * Get proxy system statistics
+   */
+  getProxyStats() {
+    if (!this.useFreeProxies) {
+      return { message: 'Free proxies disabled' };
+    }
+    return proxyRotator.getStats();
   }
 
   async saveCookies(): Promise<any[]> {
