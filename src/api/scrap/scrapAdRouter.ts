@@ -69,7 +69,7 @@ async function myScrapingLogic(page: Page): Promise<any> {
       await page.evaluate(() => {
         window.scrollTo(0, document.body.scrollHeight);
       });
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 4000));
     } catch (error: any) {
       console.error('Error during scroll:', error.message);
       throw error;
