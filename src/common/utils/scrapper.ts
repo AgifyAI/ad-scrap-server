@@ -26,21 +26,22 @@ export class SimpleScraper {
 
     // Legacy Bright Data proxy configurations (commented out)
     // Configure Bright Data proxy residential
-    // this.proxyConfig = {
-    //   host: 'brd.superproxy.io',
-    //   port: 33335,
-    //   username: 'brd-customer-hl_507845b1-zone-residential_proxy1',
-    //   password: '7h9e8uqpqlyn',
-    // };
-
-    // Configure Bright Data proxy datacenter
     this.currentProxy = {
       host: 'brd.superproxy.io',
       port: 33335,
-      username: 'brd-customer-hl_507845b1-zone-datacenter_proxy1',
-      password: '4ez6bjx2a46p',
+      username: 'brd-customer-hl_507845b1-zone-residential_proxy1',
+      password: '7h9e8uqpqlyn',
       type: 'http',
     };
+
+    // Configure Bright Data proxy datacenter
+    // this.currentProxy = {
+    //   host: 'brd.superproxy.io',
+    //   port: 33335,
+    //   username: 'brd-customer-hl_507845b1-zone-datacenter_proxy1',
+    //   password: '4ez6bjx2a46p',
+    //   type: 'http',
+    // };
   }
 
   async init() {
