@@ -20,7 +20,7 @@ scrapAdsRegistry.registerPath({
 });
 
 async function myScrapingLogic(page: Page): Promise<any> {
-  const MAX_ITERATIONS = 4000;
+  const MAX_ITERATIONS = 2000;
 
   console.log('🔍 Starting scraping logic...');
 
@@ -412,7 +412,7 @@ async function myScrapingLogic(page: Page): Promise<any> {
         };
       });
 
-      console.log('🔍 Modal debug info:', JSON.stringify(modalDebugInfo, null, 2));
+      // console.log('🔍 Modal debug info:', JSON.stringify(modalDebugInfo, null, 2));
 
       // If modal is empty, try to force content loading
       if (modalDebugInfo.dialogsFound > 0 && modalDebugInfo.dialogsInfo[0] && !modalDebugInfo.dialogsInfo[0].hasContent) {
@@ -464,7 +464,10 @@ async function myScrapingLogic(page: Page): Promise<any> {
           const hasTransparencyText = Array.from(allDescendantDivs).some(
             (div) =>
               div.textContent &&
-              (div.textContent.trim() === 'European Union transparency' || div.textContent.trim() === 'Transparence de l’Union européenne')
+              (div.textContent.trim() === 'European Union transparency' ||
+                div.textContent.trim() === 'Transparency by location' ||
+                div.textContent.trim() === 'Transparence de l’Union européenne' ||
+                div.textContent.trim() === 'Transparence par lieu')
           );
 
           const selfHasText =
@@ -730,7 +733,7 @@ scrapAdsRouter.get('/', tokenAuth, async (req: Request, res: Response) => {
   }
 
   const scraper = new SimpleScraper({
-    headless: true,
+    headless: false,
     timeout: 30000,
     useFreeProxies: false,
   });

@@ -34,12 +34,13 @@ export class SimpleScraper {
     // };
 
     // Configure Bright Data proxy datacenter
-    // this.proxyConfig = {
-    //   host: 'brd.superproxy.io',
-    //   port: 33335,
-    //   username: 'brd-customer-hl_507845b1-zone-datacenter_proxy1',
-    //   password: '4ez6bjx2a46p',
-    // };
+    this.currentProxy = {
+      host: 'brd.superproxy.io',
+      port: 33335,
+      username: 'brd-customer-hl_507845b1-zone-datacenter_proxy1',
+      password: '4ez6bjx2a46p',
+      type: 'http',
+    };
   }
 
   async init() {
@@ -125,42 +126,42 @@ export class SimpleScraper {
     });
 
     // Add comprehensive error handling and network monitoring
-    this.page.on('error', (error) => {
-      console.error('⚠️ Page error:', error.message);
-      this.handleProxyError();
-    });
+    // this.page.on('error', (error) => {
+    //   console.error('⚠️ Page error:', error.message);
+    //   this.handleProxyError();
+    // });
 
-    this.page.on('pageerror', (error) => {
-      console.error('⚠️ Page script error:', error.message);
-    });
+    // this.page.on('pageerror', (error) => {
+    //   console.error('⚠️ Page script error:', error.message);
+    // });
 
     // Monitor network requests to see if they're being blocked
-    this.page.on('requestfailed', (request) => {
-      console.error('⚠️ Request failed:', request.url(), 'Error:', request.failure()?.errorText);
-      // If proxy-related error, try to switch proxy
-      const errorText = request.failure()?.errorText;
-      if (errorText && (errorText.includes('PROXY') || errorText.includes('ERR_TUNNEL_CONNECTION_FAILED'))) {
-        this.handleProxyError();
-      }
-    });
+    // this.page.on('requestfailed', (request) => {
+    //   console.error('⚠️ Request failed:', request.url(), 'Error:', request.failure()?.errorText);
+    //   // If proxy-related error, try to switch proxy
+    //   const errorText = request.failure()?.errorText;
+    //   if (errorText && (errorText.includes('PROXY') || errorText.includes('ERR_TUNNEL_CONNECTION_FAILED'))) {
+    //     this.handleProxyError();
+    //   }
+    // });
 
-    this.page.on('response', (response) => {
-      if (!response.ok()) {
-        console.error('⚠️ HTTP error:', response.status(), response.url());
-        // Handle proxy-related HTTP errors
-        if (response.status() === 407 || response.status() === 502 || response.status() === 503) {
-          this.handleProxyError();
-        }
-      }
-    });
+    // this.page.on('response', (response) => {
+    //   if (!response.ok()) {
+    //     console.error('⚠️ HTTP error:', response.status(), response.url());
+    //     // Handle proxy-related HTTP errors
+    //     if (response.status() === 407 || response.status() === 502 || response.status() === 503) {
+    //       this.handleProxyError();
+    //     }
+    //   }
+    // });
 
     // Monitor console logs from the page
-    this.page.on('console', (msg) => {
-      const type = msg.type();
-      if (type === 'error' || type === 'warn') {
-        console.log(`🌐 Browser ${type}:`, msg.text());
-      }
-    });
+    // this.page.on('console', (msg) => {
+    //   const type = msg.type();
+    //   if (type === 'error' || type === 'warn') {
+    //     console.log(`🌐 Browser ${type}:`, msg.text());
+    //   }
+    // });
 
     // Load session cookies if provided (helps avoid rate limiting)
     if (this.sessionCookies && this.sessionCookies.length > 0) {

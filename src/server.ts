@@ -11,6 +11,7 @@ import rateLimiter from '@/common/middleware/rateLimiter';
 import requestLogger from '@/common/middleware/requestLogger';
 import { env } from '@/common/utils/envConfig';
 import { scrapAdsRouter } from './api/scrap/scrapAdRouter';
+import { scrapLinkedinPageRouter } from './api/scrap/scrapLinkedinPage';
 
 const logger = pino({
   name: 'server start',
@@ -52,7 +53,7 @@ app.use(requestLogger);
 // Routes
 app.use('/health-check', healthCheckRouter);
 app.use('/users', userRouter);
-app.use('/scrap', scrapAdsRouter);
+app.use('/scrap', scrapAdsRouter, scrapLinkedinPageRouter);
 
 // Swagger UI
 app.use(openAPIRouter);
