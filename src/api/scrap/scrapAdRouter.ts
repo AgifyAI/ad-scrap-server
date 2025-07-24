@@ -78,7 +78,7 @@ async function myScrapingLogic(page: Page): Promise<any> {
 
   let previousHeight = 0;
   let scrollAttempts = 0;
-  const MAX_SCROLL_ATTEMPTS = 40;
+  const MAX_SCROLL_ATTEMPTS = 10;
 
   console.log('Starting scroll to load more ads...');
 
